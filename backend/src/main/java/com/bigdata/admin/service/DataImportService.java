@@ -316,16 +316,66 @@ public class DataImportService {
     }
 
     /**
-     * Build JSON from CSV headers and values
+     * Build JSON from CSV headers and values using Jackson for proper escaping
      */
     private String buildJsonFromCsv(String[] headers, String[] values) {
+        try {
+            // Use Jackson ObjectMapper for proper JSON serialization and escaping
+            var jsonNode = objectMapper.createObjectNode();
+            for (int i = 0; i < headers.length && i < values.length; i++) {
+                // ObjectMapper will properly escape special characters including quotes, backslashes, etc.
+                jsonNode.put(headers[i], values[i]);
+            }
+            return objectMapper.writeValueAsString(jsonNode);
+        } catch (Exception e) {
+            log.error("Error building JSON from CSV data", e);
+            // Fallback to basic escaping if Jackson fails
+            return buildJsonWithBasicEscaping(headers, values);
+        }
+    }
+
+    /**
+     * Fallback method with basic JSON escaping
+     */
+    private String buildJsonWithBasicEscaping(String[] headers, String[] values) {
         StringBuilder json = new StringBuilder("{");
         for (int i = 0; i < headers.length && i < values.length; i++) {
             if (i > 0) json.append(",");
-            json.append("\"").append(headers[i]).append("\":\"").append(values[i]).append("\"");
+            json.append("\"").append(escapeJsonString(headers[i])).append("\":\"")
+                .append(escapeJsonString(values[i])).append("\"");
         }
         json.append("}");
         return json.toString();
+    }
+
+    /**
+     * Escape special characters in JSON strings
+     */
+    private String escapeJsonString(String input) {
+        if (input == null) {
+            return "";
+        }
+        StringBuilder escaped = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            switch (c) {
+                case '"' -> escaped.append("\\\"");
+                case '\\' -> escaped.append("\\\\");
+                case '/' -> escaped.append("\\/");
+                case '\b' -> escaped.append("\\b");
+                case '\f' -> escaped.append("\\f");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> {
+                    if (c <= '\u001F' || (c >= '\u007F' && c <= '\u009F') || (c >= '\u2000' && c <= '\u20FF')) {
+                        escaped.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        escaped.append(c);
+                    }
+                }
+            }
+        }
+        return escaped.toString();
     }
 
     /**

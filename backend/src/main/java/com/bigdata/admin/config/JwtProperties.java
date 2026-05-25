@@ -26,6 +26,13 @@ public class JwtProperties {
     private Long expiration = 86400000L;
 
     /**
+     * Absolute token expiration time in milliseconds
+     * Tokens cannot be refreshed beyond this time
+     * Default: 7 days (604800000 ms)
+     */
+    private Long absoluteExpiration = 604800000L;
+
+    /**
      * Token issuer claim
      */
     private String issuer = "bigdata-admin";

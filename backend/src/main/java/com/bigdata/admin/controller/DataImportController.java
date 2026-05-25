@@ -1,6 +1,7 @@
 package com.bigdata.admin.controller;
 
 import com.bigdata.admin.common.Result;
+import com.bigdata.admin.config.FileValidationUtil;
 import com.bigdata.admin.entity.ImportTask;
 import com.bigdata.admin.service.DataImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,21 @@ public class DataImportController {
             @RequestParam("file") MultipartFile file) {
 
         try {
+            // Validate file type and content
+            FileValidationUtil.validateImportFile(file);
+
+            // Validate source type matches file extension
+            String fileExtension = file.getOriginalFilename();
+            if (fileExtension != null) {
+                int lastDot = fileExtension.lastIndexOf('.');
+                if (lastDot > 0) {
+                    fileExtension = fileExtension.substring(lastDot + 1).toLowerCase();
+                    if (!isSourceTypeValid(sourceType, fileExtension)) {
+                        return Result.error("Source type '" + sourceType + "' does not match file extension '" + fileExtension + "'");
+                    }
+                }
+            }
+
             // Create import task
             Long taskId = dataImportService.createImportTask(
                     collectionId,
@@ -44,9 +60,23 @@ public class DataImportController {
             ImportTask task = dataImportService.getTask(taskId);
             return Result.success("Import task created successfully", task);
 
+        } catch (IllegalArgumentException e) {
+            return Result.error("Validation error: " + e.getMessage());
         } catch (Exception e) {
             return Result.error("Failed to create import task: " + e.getMessage());
         }
+    }
+
+    /**
+     * Validate that source type matches file extension
+     */
+    private boolean isSourceTypeValid(String sourceType, String fileExtension) {
+        return switch (sourceType.toLowerCase()) {
+            case "csv" -> fileExtension.equals("csv");
+            case "excel", "xlsx" -> fileExtension.equals("xlsx") || fileExtension.equals("xls");
+            case "json" -> fileExtension.equals("json");
+            default -> false;
+        };
     }
 
     @GetMapping("/tasks/{taskId}")
