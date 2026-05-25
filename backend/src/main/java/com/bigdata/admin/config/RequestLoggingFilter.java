@@ -13,6 +13,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 /**
  * Request/Response logging filter
@@ -23,6 +24,9 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
     private static final int MAX_PAYLOAD_LENGTH = 1000;
+    private static final Pattern SENSITIVE_FIELD_PATTERN = Pattern.compile(
+            "(\\\"(?:password|token|authorization|secret|credential|connectionConfig)\\\"\\s*:\\s*\\\")(.*?)(\\\")",
+            Pattern.CASE_INSENSITIVE);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -55,8 +59,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private void logRequestResponse(ContentCachingRequestWrapper requestWrapper,
                                     ContentCachingResponseWrapper responseWrapper,
                                     String uri, String method, int status, long duration) {
-        String requestBody = getPayload(requestWrapper.getContentAsByteArray());
-        String responseBody = getPayload(responseWrapper.getContentAsByteArray());
+        String requestBody = sanitizePayload(getPayload(requestWrapper.getContentAsByteArray()));
+        String responseBody = sanitizePayload(getPayload(responseWrapper.getContentAsByteArray()));
 
         log.warn("Request: {} {} | Status: {} | Duration: {}ms | Request: {} | Response: {}",
                 method, uri, status, duration,
@@ -68,6 +72,13 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             return "";
         }
         return new String(buf, StandardCharsets.UTF_8);
+    }
+
+    public String sanitizePayload(String payload) {
+        if (payload == null || payload.isEmpty()) {
+            return "";
+        }
+        return SENSITIVE_FIELD_PATTERN.matcher(payload).replaceAll("$1***$3");
     }
 
     private String truncate(String payload) {

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  * Provides REST API for ETL operations
  */
 @RestController
-@RequestMapping("/api/etl")
+@RequestMapping("/etl")
 @Tag(name = "ETL Transformations", description = "ETL transformation management and execution")
 public class EtlController {
 

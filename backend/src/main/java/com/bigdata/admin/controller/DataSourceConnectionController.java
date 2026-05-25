@@ -15,7 +15,7 @@ import java.util.Map;
  * Provides REST API for multi-datasource connections
  */
 @RestController
-@RequestMapping("/api/datasources")
+@RequestMapping("/datasources/connections")
 @Tag(name = "Data Source Connections", description = "Multi-datasource connection management")
 public class DataSourceConnectionController {
 

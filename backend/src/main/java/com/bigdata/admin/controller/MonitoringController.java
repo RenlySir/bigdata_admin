@@ -18,7 +18,7 @@ import java.util.List;
  * Provides REST API for system monitoring and alerting
  */
 @RestController
-@RequestMapping("/api/monitoring")
+@RequestMapping("/monitoring")
 @Tag(name = "System Monitoring", description = "System metrics and alerting")
 public class MonitoringController {
 

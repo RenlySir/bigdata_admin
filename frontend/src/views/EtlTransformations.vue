@@ -402,7 +402,7 @@ const handleSubmit = async () => {
     submitting.value = true
 
     if (isEdit.value) {
-      await apiEtl.updateTransformation(row.id, formData.value)
+      await apiEtl.updateTransformation(formData.value.id, formData.value)
       ElMessage.success('更新成功')
     } else {
       await apiEtl.createTransformation(formData.value)

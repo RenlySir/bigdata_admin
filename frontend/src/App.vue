@@ -26,6 +26,14 @@
           <el-icon><Document /></el-icon>
           <span>数据记录</span>
         </el-menu-item>
+        <el-menu-item index="/etl">
+          <el-icon><Operation /></el-icon>
+          <span>ETL 转换</span>
+        </el-menu-item>
+        <el-menu-item index="/alerts">
+          <el-icon><Warning /></el-icon>
+          <span>监控告警</span>
+        </el-menu-item>
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <span>设置</span>
@@ -75,6 +83,8 @@ const currentPageName = computed(() => {
     '/datasources': '数据源管理',
     '/collections': '数据集合',
     '/records': '数据记录',
+    '/etl': 'ETL 转换',
+    '/alerts': '监控告警',
     '/settings': '系统设置'
   }
   return names[route.path] || '首页'

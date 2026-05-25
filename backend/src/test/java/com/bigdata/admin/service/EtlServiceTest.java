@@ -143,8 +143,6 @@ class EtlServiceTest {
 
     @Test
     void createTransformation_WhenNameTooLong_ShouldThrowException() {
-        when(collectionMapper.selectById(1L)).thenReturn(testCollection);
-
         char[] longName = new char[101];
         Arrays.fill(longName, 'A');
 
@@ -170,6 +168,35 @@ class EtlServiceTest {
         assertThrows(IllegalArgumentException.class, () -> {
             etlService.createTransformation(dto);
         });
+    }
+
+
+    @Test
+    void createTransformation_WhenTargetCollectionMissing_ShouldThrowException() {
+        when(collectionMapper.selectById(1L)).thenReturn(testCollection);
+        when(collectionMapper.selectById(999L)).thenReturn(null);
+
+        EtlTransformationDto dto = new EtlTransformationDto();
+        dto.setName("目标不存在");
+        dto.setSourceCollectionId(1L);
+        dto.setTargetCollectionId(999L);
+        dto.setTransformationType("mapping");
+
+        assertThrows(IllegalArgumentException.class, () -> etlService.createTransformation(dto));
+        verify(transformationMapper, never()).insert(any(EtlTransformation.class));
+    }
+
+    @Test
+    void createTransformation_WhenSourceCollectionMissing_ShouldThrowException() {
+        when(collectionMapper.selectById(999L)).thenReturn(null);
+
+        EtlTransformationDto dto = new EtlTransformationDto();
+        dto.setName("源不存在");
+        dto.setSourceCollectionId(999L);
+        dto.setTransformationType("mapping");
+
+        assertThrows(IllegalArgumentException.class, () -> etlService.createTransformation(dto));
+        verify(transformationMapper, never()).insert(any(EtlTransformation.class));
     }
 
     @Test

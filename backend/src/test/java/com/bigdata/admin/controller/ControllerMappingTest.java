@@ -20,4 +20,11 @@ class ControllerMappingTest {
 
         assertArrayEquals(new String[]{"/monitoring"}, mapping.value());
     }
+
+    @Test
+    void dataSourceConnectionController_ShouldNotDuplicateGlobalApiPrefix() {
+        RequestMapping mapping = DataSourceConnectionController.class.getAnnotation(RequestMapping.class);
+
+        assertArrayEquals(new String[]{"/datasources/connections"}, mapping.value());
+    }
 }
