@@ -5,29 +5,36 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 
 /**
  * JWT Authentication Filter
  * Validates JWT tokens and sets authentication context
  */
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenBlacklist tokenBlacklist;
+    private final CustomUserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                   TokenBlacklist tokenBlacklist,
+                                   CustomUserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenBlacklist = tokenBlacklist;
+        this.userDetailsService = userDetailsService;
     }
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
@@ -43,21 +50,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = extractJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
+                if (tokenBlacklist.isBlacklisted(jwt)) {
+                    log.warn("Rejected blacklisted JWT token");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
                 String username = jwtTokenProvider.getUsernameFromToken(jwt);
+                CustomUserPrincipal principal = loadPrincipal(username, userId);
 
-                // Create authentication token
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userId,
+                                principal,
                                 null,
-                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                                principal.getAuthorities()
                         );
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                // Set authentication in security context
+                request.setAttribute("userId", userId);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.debug("Set authentication for user: {} (ID: {})", username, userId);
             }
@@ -66,6 +79,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private CustomUserPrincipal loadPrincipal(String username, Long tokenUserId) {
+        try {
+            var userDetails = userDetailsService.loadUserByUsername(username);
+            if (userDetails instanceof CustomUserPrincipal principal
+                    && principal.getUserId().equals(tokenUserId)) {
+                return principal;
+            }
+            throw new UsernameNotFoundException("Token subject does not match authenticated user");
+        } catch (UsernameNotFoundException ex) {
+            log.warn("JWT user no longer exists or is disabled: {}", username);
+            throw ex;
+        }
     }
 
     /**

@@ -5,7 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Rate Limiter using Token Bucket algorithm
@@ -17,11 +20,20 @@ public class RateLimiter {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final RateLimitProperties properties;
+    private final Clock clock;
+    private final ConcurrentHashMap<String, LocalBucket> localBuckets = new ConcurrentHashMap<>();
 
     public RateLimiter(RedisTemplate<String, Object> redisTemplate,
                        RateLimitProperties properties) {
+        this(redisTemplate, properties, Clock.systemUTC());
+    }
+
+    RateLimiter(RedisTemplate<String, Object> redisTemplate,
+                RateLimitProperties properties,
+                Clock clock) {
         this.redisTemplate = redisTemplate;
         this.properties = properties;
+        this.clock = clock;
     }
 
     /**
@@ -42,6 +54,10 @@ public class RateLimiter {
     public boolean isAllowed(String key, int capacity) {
         if (!properties.isEnabled()) {
             return true;
+        }
+
+        if (!properties.isUseRedis()) {
+            return isAllowedLocally(key, capacity);
         }
 
         String redisKey = "ratelimit:" + key;
@@ -68,10 +84,28 @@ public class RateLimiter {
 
             return true;
         } catch (Exception e) {
-            log.error("Error checking rate limit for key: {}", key, e);
-            // Fail open - allow request if Redis is unavailable
-            return true;
+            log.warn("Redis rate limiting failed for key: {}; using local fallback: {}", key, e.getMessage());
+            return isAllowedLocally(key, capacity);
         }
+    }
+
+    private boolean isAllowedLocally(String key, int capacity) {
+        long now = clock.millis();
+        long windowMillis = TimeUnit.SECONDS.toMillis(properties.getTimeWindowSeconds());
+        LocalBucket bucket = localBuckets.compute(key, (ignored, existing) -> {
+            if (existing == null || now >= existing.windowExpiresAtMillis) {
+                return new LocalBucket(now + windowMillis);
+            }
+            return existing;
+        });
+
+        int current = bucket.count.incrementAndGet();
+        if (current > capacity) {
+            log.warn("Local fallback rate limit exceeded for key: {}, count: {}, limit: {}",
+                    key, current, capacity);
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -97,6 +131,7 @@ public class RateLimiter {
      * @param key Unique identifier
      */
     public void reset(String key) {
+        localBuckets.remove(key);
         try {
             redisTemplate.delete("ratelimit:" + key);
         } catch (Exception e) {
@@ -110,6 +145,9 @@ public class RateLimiter {
      * @return Remaining requests
      */
     public long getRemaining(String key) {
+        if (!properties.isUseRedis()) {
+            return getLocalRemaining(key, properties.getCapacity());
+        }
         try {
             Long current = (Long) redisTemplate.opsForValue().get("ratelimit:" + key);
             if (current == null) {
@@ -117,8 +155,25 @@ public class RateLimiter {
             }
             return Math.max(0, properties.getCapacity() - current);
         } catch (Exception e) {
-            log.error("Error getting remaining rate limit for key: {}", key, e);
-            return 0;
+            log.warn("Redis remaining lookup failed for key: {}; using local fallback: {}", key, e.getMessage());
+            return getLocalRemaining(key, properties.getCapacity());
+        }
+    }
+
+    private long getLocalRemaining(String key, int capacity) {
+        LocalBucket bucket = localBuckets.get(key);
+        if (bucket == null || clock.millis() >= bucket.windowExpiresAtMillis) {
+            return capacity;
+        }
+        return Math.max(0, capacity - bucket.count.get());
+    }
+
+    private static final class LocalBucket {
+        private final long windowExpiresAtMillis;
+        private final AtomicInteger count = new AtomicInteger(0);
+
+        private LocalBucket(long windowExpiresAtMillis) {
+            this.windowExpiresAtMillis = windowExpiresAtMillis;
         }
     }
 }

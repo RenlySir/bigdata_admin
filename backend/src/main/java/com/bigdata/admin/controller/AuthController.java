@@ -212,9 +212,12 @@ public class AuthController {
             return Result.error("User not found");
         }
 
-        // Check if current token is blacklisted
+        String currentToken = null;
+        Long currentVersion = 0L;
+        Long absoluteExpiry = null;
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String currentToken = authHeader.substring(7);
+            currentToken = authHeader.substring(7);
             if (tokenBlacklist.isBlacklisted(currentToken)) {
                 return Result.error(401, "Token has been revoked");
             }
@@ -222,13 +225,17 @@ public class AuthController {
             if (!jwtTokenProvider.canRefreshToken(currentToken)) {
                 return Result.error(401, "Token has expired beyond refresh limit. Please re-authenticate.");
             }
+            currentVersion = jwtTokenProvider.getTokenVersion(currentToken);
+            absoluteExpiry = jwtTokenProvider.getAbsoluteExpiration(currentToken);
         }
 
-        // Generate new token with incremented version
-        Long currentVersion = jwtTokenProvider.getTokenVersion(
-            authHeader != null && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : ""
+        // Generate new token with incremented version and preserve the absolute session expiration.
+        String newToken = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getUsername(),
+                currentVersion + 1,
+                absoluteExpiry
         );
-        String newToken = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), currentVersion + 1);
 
         Map<String, String> response = new HashMap<>();
         response.put("token", newToken);

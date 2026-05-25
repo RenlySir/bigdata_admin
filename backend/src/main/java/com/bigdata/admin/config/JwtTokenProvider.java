@@ -48,9 +48,23 @@ public class JwtTokenProvider {
      * @return JWT token string
      */
     public String generateToken(Long userId, String username, Long tokenVersion) {
+        return generateToken(userId, username, tokenVersion, null);
+    }
+
+    /**
+     * Generate JWT token while preserving an existing absolute expiration window.
+     * @param userId User ID
+     * @param username Username
+     * @param tokenVersion Token version for rotation (null for new tokens)
+     * @param absoluteExpiryMillis Absolute session expiration timestamp to preserve during refresh
+     * @return JWT token string
+     */
+    public String generateToken(Long userId, String username, Long tokenVersion, Long absoluteExpiryMillis) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
-        Date absoluteExpiryDate = new Date(now.getTime() + jwtProperties.getAbsoluteExpiration());
+        long absoluteExpiry = absoluteExpiryMillis != null
+                ? absoluteExpiryMillis
+                : now.getTime() + jwtProperties.getAbsoluteExpiration();
 
         // Generate new token version if not provided
         long version = (tokenVersion != null) ? tokenVersion : System.currentTimeMillis();
@@ -59,7 +73,7 @@ public class JwtTokenProvider {
                 .subject(String.valueOf(userId))
                 .claim("username", username)
                 .claim("version", version)
-                .claim("absoluteExpiry", absoluteExpiryDate.getTime())
+                .claim("absoluteExpiry", absoluteExpiry)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .issuer(jwtProperties.getIssuer())
