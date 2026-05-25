@@ -90,4 +90,30 @@ class DataSourceServiceTest {
         // For now, we test the logic structure
         assertNotNull(dataSourceService);
     }
+    @Test
+    void createDataSource_WhenInvalidType_ShouldThrowException() {
+        testDataSource.setType("mysql;drop table sys_user");
+
+        assertThrows(IllegalArgumentException.class, () -> dataSourceService.createDataSource(testDataSource));
+        verify(dataSourceMapper, never()).insert(any(DataSource.class));
+    }
+
+    @Test
+    void createDataSource_WhenConnectionConfigIsNotJson_ShouldThrowException() {
+        testDataSource.setConnectionConfig("host=localhost;password=secret");
+
+        assertThrows(IllegalArgumentException.class, () -> dataSourceService.createDataSource(testDataSource));
+        verify(dataSourceMapper, never()).insert(any(DataSource.class));
+    }
+
+    @Test
+    void createDataSource_WhenTypeHasMixedCase_ShouldNormalizeType() {
+        when(dataSourceMapper.insert(any(DataSource.class))).thenReturn(1);
+        testDataSource.setType("TiDB");
+
+        DataSource result = dataSourceService.createDataSource(testDataSource);
+
+        assertEquals("tidb", result.getType());
+    }
+
 }

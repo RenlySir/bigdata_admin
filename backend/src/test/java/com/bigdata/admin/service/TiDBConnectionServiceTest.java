@@ -116,4 +116,21 @@ class TiDBConnectionServiceTest {
         assertNotNull(url);
         assertTrue(url.contains("custom_db"));
     }
+    @Test
+    void validateDatabaseName_WhenUnsafeIdentifier_ShouldRejectSqlInjection() {
+        assertDoesNotThrow(() -> tiDBConnectionService.validateDatabaseName("analytics_2026"));
+        assertThrows(IllegalArgumentException.class,
+                () -> tiDBConnectionService.validateDatabaseName("analytics`; DROP TABLE sys_user; --"));
+    }
+
+    @Test
+    void validateReadOnlyQuery_WhenMutationOrMultiStatement_ShouldRejectSqlInjection() {
+        assertDoesNotThrow(() -> tiDBConnectionService.validateReadOnlyQuery("SELECT id, name FROM orders LIMIT 10"));
+        assertDoesNotThrow(() -> tiDBConnectionService.validateReadOnlyQuery("SHOW TABLES"));
+        assertThrows(IllegalArgumentException.class,
+                () -> tiDBConnectionService.validateReadOnlyQuery("SELECT * FROM orders; DROP TABLE orders"));
+        assertThrows(IllegalArgumentException.class,
+                () -> tiDBConnectionService.validateReadOnlyQuery("UPDATE orders SET amount = 0"));
+    }
+
 }
