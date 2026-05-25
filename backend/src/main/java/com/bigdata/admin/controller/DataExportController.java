@@ -4,22 +4,26 @@ import com.bigdata.admin.common.Result;
 import com.bigdata.admin.service.DataExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Data Export Controller
  */
 @RestController
 @RequestMapping("/collections/{collectionId}/export")
-@RequiredArgsConstructor
 @Tag(name = "Data Export", description = "Data export operations")
 public class DataExportController {
 
     private final DataExportService dataExportService;
+
+    public DataExportController(DataExportService dataExportService) {
+        this.dataExportService = dataExportService;
+    }
 
     @GetMapping("/excel")
     @Operation(summary = "Export collection to Excel")

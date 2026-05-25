@@ -100,11 +100,10 @@
             <version>2.3.0</version>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- Redis for caching and rate limiting -->
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <!-- Test dependencies -->

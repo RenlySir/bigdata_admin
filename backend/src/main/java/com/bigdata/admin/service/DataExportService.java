@@ -1,10 +1,10 @@
 package com.bigdata.admin.service;
 
 import com.bigdata.admin.entity.DataRecord;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -15,10 +15,10 @@ import java.util.List;
  * Data Export Service
  * Handles exporting data to Excel and JSON formats
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class DataExportService {
+
+    private static final Logger log = LoggerFactory.getLogger(DataExportService.class);
 
     /**
      * Export records to Excel format

@@ -10,23 +10,28 @@ import com.bigdata.admin.service.DataSourceService;
 import com.bigdata.admin.service.TiDBConnectionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/datasources")
-@RequiredArgsConstructor
 @Tag(name = "Data Source Management", description = "Data source CRUD operations")
 public class DataSourceController {
 
+    private static final Logger log = LoggerFactory.getLogger(DataSourceController.class);
+
     private final DataSourceService dataSourceService;
     private final TiDBConnectionService tiDBConnectionService;
+
+    public DataSourceController(DataSourceService dataSourceService, TiDBConnectionService tiDBConnectionService) {
+        this.dataSourceService = dataSourceService;
+        this.tiDBConnectionService = tiDBConnectionService;
+    }
 
     @GetMapping
     @Operation(summary = "Get all data sources with pagination")

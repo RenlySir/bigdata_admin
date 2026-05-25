@@ -1,20 +1,24 @@
 package com.bigdata.admin.service;
 
 import com.bigdata.admin.config.CacheConfig;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 /**
  * Cache Management Service
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class CacheService {
 
+    private static final Logger log = LoggerFactory.getLogger(CacheService.class);
+
     private final CacheManager cacheManager;
+
+    public CacheService(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+    }
 
     /**
      * Evict a specific cache entry

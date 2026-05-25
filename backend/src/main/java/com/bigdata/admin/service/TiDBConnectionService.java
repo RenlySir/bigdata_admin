@@ -4,23 +4,35 @@ import com.bigdata.admin.config.TiDBConfig;
 import com.bigdata.admin.dto.TiDBConnectionInfo;
 import com.bigdata.admin.dto.TiDBDatabaseInfo;
 import com.bigdata.admin.dto.TiDBTableInfo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Service for managing TiDB connections and operations
  * Provides connection pooling, database discovery, and metadata access
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class TiDBConnectionService {
 
+    private static final Logger log = LoggerFactory.getLogger(TiDBConnectionService.class);
+
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[A-Za-z0-9_]{1,64}$");
+    private static final Set<String> ALLOWED_QUERY_PREFIXES = Set.of("select", "show", "explain", "describe", "desc");
+    private static final Set<String> FORBIDDEN_QUERY_KEYWORDS = Set.of(
+        "insert", "update", "delete", "drop", "alter", "truncate", "create", "replace",
+        "grant", "revoke", "load", "outfile", "infile", "call", "set"
+    );
+
     private final TiDBConfig defaultConfig;
+
+    public TiDBConnectionService(TiDBConfig defaultConfig) {
+        this.defaultConfig = defaultConfig;
+    }
 
     // Connection cache for active data sources
     private final Map<Long, ConnectionInfo> connectionCache = new HashMap<>();
@@ -113,14 +125,15 @@ public class TiDBConnectionService {
      */
     public List<TiDBTableInfo> getTables(Long dataSourceId, String database) {
         log.debug("Fetching tables for database: {}", database);
+        String safeDatabase = validateDatabaseName(database);
 
         Connection connection = null;
         try {
             connection = getConnection(dataSourceId);
 
-            // Set the database context
+            // Set the database context using a validated identifier.
             try (Statement stmt = connection.createStatement()) {
-                stmt.execute("USE `" + database + "`");
+                stmt.execute("USE `" + safeDatabase + "`");
             }
 
             List<TiDBTableInfo> tables = new ArrayList<>();
@@ -133,13 +146,13 @@ public class TiDBConnectionService {
 
                     tables.add(TiDBTableInfo.builder()
                         .name(tableName)
-                        .database(database)
+                        .database(safeDatabase)
                         .dataSourceId(dataSourceId)
                         .build());
                 }
             }
 
-            log.debug("Found {} tables in database {}", tables.size(), database);
+            log.debug("Found {} tables in database {}", tables.size(), safeDatabase);
             return tables;
 
         } catch (SQLException e) {
@@ -152,21 +165,23 @@ public class TiDBConnectionService {
      * Execute a query and return results
      */
     public List<Map<String, Object>> executeQuery(Long dataSourceId, String database, String query) {
-        log.debug("Executing query on database: {}", database);
+        log.debug("Executing read-only query on database: {}", database);
+        String safeDatabase = validateDatabaseName(database);
+        String safeQuery = validateReadOnlyQuery(query);
 
         Connection connection = null;
         try {
             connection = getConnection(dataSourceId);
 
-            // Set the database context
+            // Set the database context using a validated identifier.
             try (Statement stmt = connection.createStatement()) {
-                stmt.execute("USE `" + database + "`");
+                stmt.execute("USE `" + safeDatabase + "`");
             }
 
             List<Map<String, Object>> results = new ArrayList<>();
 
             try (Statement stmt = connection.createStatement();
-                 ResultSet rs = stmt.executeQuery(query)) {
+                 ResultSet rs = stmt.executeQuery(safeQuery)) {
 
                 ResultSetMetaData metaData = rs.getMetaData();
                 int columnCount = metaData.getColumnCount();
@@ -189,6 +204,46 @@ public class TiDBConnectionService {
             log.error("Query execution failed", e);
             throw new RuntimeException("Query failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Validate and normalize a TiDB database identifier before it is interpolated into SQL.
+     */
+    public String validateDatabaseName(String database) {
+        if (database == null || database.trim().isEmpty()) {
+            throw new IllegalArgumentException("Database name is required");
+        }
+        String normalized = database.trim();
+        if (!SAFE_IDENTIFIER.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("Invalid database name");
+        }
+        return normalized;
+    }
+
+    /**
+     * Restrict dynamic SQL execution to a single read-only statement.
+     */
+    public String validateReadOnlyQuery(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            throw new IllegalArgumentException("Query is required");
+        }
+        String normalized = query.trim();
+        if (normalized.contains(";")) {
+            throw new IllegalArgumentException("Only one read-only statement is allowed");
+        }
+
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        String firstToken = lower.split("\\s+", 2)[0];
+        if (!ALLOWED_QUERY_PREFIXES.contains(firstToken)) {
+            throw new IllegalArgumentException("Only read-only SELECT/SHOW/DESCRIBE/EXPLAIN queries are allowed");
+        }
+
+        for (String keyword : FORBIDDEN_QUERY_KEYWORDS) {
+            if (Pattern.compile("(^|[^a-z0-9_])" + keyword + "([^a-z0-9_]|$)").matcher(lower).find()) {
+                throw new IllegalArgumentException("Query contains forbidden keyword: " + keyword);
+            }
+        }
+        return normalized;
     }
 
     /**

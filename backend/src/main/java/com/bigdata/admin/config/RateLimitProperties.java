@@ -1,13 +1,11 @@
 package com.bigdata.admin.config;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * Rate Limiting Configuration Properties
  */
-@Data
 @Component
 @ConfigurationProperties(prefix = "app.ratelimit")
 public class RateLimitProperties {
@@ -41,4 +39,52 @@ public class RateLimitProperties {
      * Whether to use Redis for distributed rate limiting
      */
     private boolean useRedis = true;
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public int getTimeWindowSeconds() {
+        return timeWindowSeconds;
+    }
+
+    public void setTimeWindowSeconds(int timeWindowSeconds) {
+        this.timeWindowSeconds = timeWindowSeconds;
+    }
+
+    public int getBatchCapacity() {
+        return batchCapacity;
+    }
+
+    public void setBatchCapacity(int batchCapacity) {
+        this.batchCapacity = batchCapacity;
+    }
+
+    public int getSensitiveCapacity() {
+        return sensitiveCapacity;
+    }
+
+    public void setSensitiveCapacity(int sensitiveCapacity) {
+        this.sensitiveCapacity = sensitiveCapacity;
+    }
+
+    public boolean isUseRedis() {
+        return useRedis;
+    }
+
+    public void setUseRedis(boolean useRedis) {
+        this.useRedis = useRedis;
+    }
 }

@@ -1,13 +1,11 @@
 package com.bigdata.admin.config;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * JWT Configuration Properties
  */
-@Data
 @Component
 @ConfigurationProperties(prefix = "app.jwt")
 public class JwtProperties {
@@ -26,9 +24,48 @@ public class JwtProperties {
     private Long expiration = 86400000L;
 
     /**
+     * Absolute token expiration time in milliseconds
+     * Tokens cannot be refreshed beyond this time
+     * Default: 7 days (604800000 ms)
+     */
+    private Long absoluteExpiration = 604800000L;
+
+    /**
      * Token issuer claim
      */
     private String issuer = "bigdata-admin";
+
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
+    public Long getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(Long expiration) {
+        this.expiration = expiration;
+    }
+
+    public Long getAbsoluteExpiration() {
+        return absoluteExpiration;
+    }
+
+    public void setAbsoluteExpiration(Long absoluteExpiration) {
+        this.absoluteExpiration = absoluteExpiration;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
 
     /**
      * Validate the JWT secret configuration

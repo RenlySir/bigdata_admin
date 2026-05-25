@@ -3,6 +3,7 @@ package com.bigdata.admin.controller;
 import com.bigdata.admin.common.Result;
 import com.bigdata.admin.config.CustomUserPrincipal;
 import com.bigdata.admin.config.JwtTokenProvider;
+import com.bigdata.admin.config.TokenBlacklist;
 import com.bigdata.admin.dto.LoginRequest;
 import com.bigdata.admin.dto.LoginResponse;
 import com.bigdata.admin.dto.RegisterRequest;
@@ -11,8 +12,8 @@ import com.bigdata.admin.mapper.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,20 +27,31 @@ import java.util.Map;
 /**
  * Authentication Controller
  */
-@Slf4j
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 @Tag(name = "Authentication", description = "User authentication operations")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final TokenBlacklist tokenBlacklist;
+
+    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
+                         UserMapper userMapper, PasswordEncoder passwordEncoder, TokenBlacklist tokenBlacklist) {
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.tokenBlacklist = tokenBlacklist;
+    }
 
     @PostMapping("/login")
     @Operation(summary = "User login")
+    @com.bigdata.admin.config.RateLimitAspect.RateLimit(capacity = 10)
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             log.info("Login attempt for user: {}", request.getUsername());
@@ -175,15 +187,22 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "User logout")
-    public Result<Void> logout() {
-        // In a stateless JWT setup, logout is handled client-side by removing the token
-        // For additional security, you could implement a token blacklist
+    public Result<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        // Add the current token to the blacklist
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            // Blacklist for the duration of the token's validity
+            tokenBlacklist.blacklist(token, jwtTokenProvider.getExpirationTime() / 1000);
+            log.info("Token added to blacklist on logout");
+        }
         return Result.success("Logout successful", null);
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "Refresh JWT token")
-    public Result<Map<String, String>> refreshToken(@AuthenticationPrincipal CustomUserPrincipal principal) {
+    public Result<Map<String, String>> refreshToken(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         if (principal == null) {
             return Result.error(401, "Not authenticated");
         }
@@ -193,7 +212,23 @@ public class AuthController {
             return Result.error("User not found");
         }
 
-        String newToken = jwtTokenProvider.generateToken(user.getId(), user.getUsername());
+        // Check if current token is blacklisted
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String currentToken = authHeader.substring(7);
+            if (tokenBlacklist.isBlacklisted(currentToken)) {
+                return Result.error(401, "Token has been revoked");
+            }
+            // Check if token can be refreshed (absolute expiration check)
+            if (!jwtTokenProvider.canRefreshToken(currentToken)) {
+                return Result.error(401, "Token has expired beyond refresh limit. Please re-authenticate.");
+            }
+        }
+
+        // Generate new token with incremented version
+        Long currentVersion = jwtTokenProvider.getTokenVersion(
+            authHeader != null && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : ""
+        );
+        String newToken = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), currentVersion + 1);
 
         Map<String, String> response = new HashMap<>();
         response.put("token", newToken);

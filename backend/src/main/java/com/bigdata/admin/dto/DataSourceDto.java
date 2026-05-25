@@ -3,12 +3,10 @@ package com.bigdata.admin.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
 
 /**
  * Data Source DTO with validation
  */
-@Data
 public class DataSourceDto {
 
     private Long id;
@@ -31,4 +29,44 @@ public class DataSourceDto {
 
     public interface Create {}
     public interface Update {}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getConnectionConfig() {
+        return connectionConfig;
+    }
+
+    public void setConnectionConfig(String connectionConfig) {
+        this.connectionConfig = connectionConfig;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }

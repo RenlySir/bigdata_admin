@@ -9,8 +9,8 @@ import com.bigdata.admin.entity.DataRecord;
 import com.bigdata.admin.exception.ResourceNotFoundException;
 import com.bigdata.admin.mapper.DataCollectionMapper;
 import com.bigdata.admin.mapper.DataRecordMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -23,14 +23,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Service for managing data collections
  * Provides CRUD operations with caching support
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class DataCollectionService extends ServiceImpl<DataCollectionMapper, DataCollection> {
+
+    private static final Logger log = LoggerFactory.getLogger(DataCollectionService.class);
 
     private final DataCollectionMapper dataCollectionMapper;
     private final DataRecordMapper dataRecordMapper;
     private final ObjectMapper objectMapper;
+
+    public DataCollectionService(DataCollectionMapper dataCollectionMapper,
+                                  DataRecordMapper dataRecordMapper,
+                                  ObjectMapper objectMapper) {
+        this.dataCollectionMapper = dataCollectionMapper;
+        this.dataRecordMapper = dataRecordMapper;
+        this.objectMapper = objectMapper;
+    }
 
     private static final int MAX_PAGE_SIZE = 100;
 
