@@ -1,6 +1,7 @@
 package com.bigdata.admin.config;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -11,8 +12,9 @@ import java.util.Set;
  * File Validation Utility
  * Validates file types, MIME types, and magic numbers
  */
-@Slf4j
 public class FileValidationUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(FileValidationUtil.class);
 
     // Allowed file extensions
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("csv", "xlsx", "xls", "json");
@@ -33,8 +35,8 @@ public class FileValidationUtil {
     );
 
     // Excel magic numbers
-    private static final byte[] XLSX_MAGIC = {0x50, 0x4B, 0x03, 0x04};  // ZIP header
-    private static final byte[] XLS_MAGIC = {0xD0, 0xCF, 0x11, 0xE0};   // OLE2 header
+    private static final byte[] XLSX_MAGIC = {(byte) 0x50, (byte) 0x4B, (byte) 0x03, (byte) 0x04};  // ZIP header
+    private static final byte[] XLS_MAGIC = {(byte) 0xD0, (byte) 0xCF, (byte) 0x11, (byte) 0xE0};   // OLE2 header
 
     /**
      * Validate file for import operations

@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bigdata.admin.entity.DataRecord;
 import com.bigdata.admin.mapper.DataRecordMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +15,18 @@ import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class DataRecordService extends ServiceImpl<DataRecordMapper, DataRecord> {
+
+    private static final Logger log = LoggerFactory.getLogger(DataRecordService.class);
 
     private final DataRecordMapper dataRecordMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    public DataRecordService(DataRecordMapper dataRecordMapper, RedisTemplate<String, Object> redisTemplate) {
+        this.dataRecordMapper = dataRecordMapper;
+        this.redisTemplate = redisTemplate;
+    }
 
     public Page<DataRecord> getRecords(Long collectionId, int page, int size, String keyword) {
         Page<DataRecord> pageParam = new Page<>(page, size);

@@ -2,8 +2,8 @@ package com.bigdata.admin.config;
 
 import com.bigdata.admin.entity.User;
 import com.bigdata.admin.mapper.UserMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,12 +15,16 @@ import java.util.Collections;
 /**
  * Custom User Details Service for Spring Security
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    private static final Logger log = LoggerFactory.getLogger(CustomUserDetailsService.class);
+
     private final UserMapper userMapper;
+
+    public CustomUserDetailsService(UserMapper userMapper) {
+        this.userMapper = userMapper;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

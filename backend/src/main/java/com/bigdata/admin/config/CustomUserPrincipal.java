@@ -1,7 +1,6 @@
 package com.bigdata.admin.config;
 
 import com.bigdata.admin.entity.User;
-import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -10,7 +9,6 @@ import java.util.Collection;
 /**
  * Custom User Principal for authentication
  */
-@Getter
 public class CustomUserPrincipal implements UserDetails {
 
     private final User user;
@@ -19,6 +17,14 @@ public class CustomUserPrincipal implements UserDetails {
     public CustomUserPrincipal(User user, Collection<? extends GrantedAuthority> authorities) {
         this.user = user;
         this.authorities = authorities;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
     }
 
     @Override

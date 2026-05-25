@@ -5,13 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bigdata.admin.entity.DataSource;
 import com.bigdata.admin.mapper.DataSourceMapper;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
 public class DataSourceService extends ServiceImpl<DataSourceMapper, DataSource> {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSourceService.class);
 
     private final DataSourceMapper dataSourceMapper;
 

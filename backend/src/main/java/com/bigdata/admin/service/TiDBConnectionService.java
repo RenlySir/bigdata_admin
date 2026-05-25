@@ -4,8 +4,8 @@ import com.bigdata.admin.config.TiDBConfig;
 import com.bigdata.admin.dto.TiDBConnectionInfo;
 import com.bigdata.admin.dto.TiDBDatabaseInfo;
 import com.bigdata.admin.dto.TiDBTableInfo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
@@ -15,12 +15,16 @@ import java.util.*;
  * Service for managing TiDB connections and operations
  * Provides connection pooling, database discovery, and metadata access
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class TiDBConnectionService {
 
+    private static final Logger log = LoggerFactory.getLogger(TiDBConnectionService.class);
+
     private final TiDBConfig defaultConfig;
+
+    public TiDBConnectionService(TiDBConfig defaultConfig) {
+        this.defaultConfig = defaultConfig;
+    }
 
     // Connection cache for active data sources
     private final Map<Long, ConnectionInfo> connectionCache = new HashMap<>();

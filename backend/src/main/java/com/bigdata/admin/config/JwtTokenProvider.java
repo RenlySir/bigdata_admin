@@ -2,7 +2,8 @@ package com.bigdata.admin.config;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,9 +13,10 @@ import java.util.Date;
 /**
  * JWT Token Provider for token generation and validation
  */
-@Slf4j
 @Component
 public class JwtTokenProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     private final JwtProperties jwtProperties;
     private final SecretKey key;

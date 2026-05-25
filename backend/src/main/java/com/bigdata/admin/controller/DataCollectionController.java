@@ -6,17 +6,19 @@ import com.bigdata.admin.entity.DataCollection;
 import com.bigdata.admin.service.DataCollectionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/collections")
-@RequiredArgsConstructor
 @Tag(name = "Data Collection Management", description = "Data collection CRUD operations")
 public class DataCollectionController {
 
     private final DataCollectionService dataCollectionService;
+
+    public DataCollectionController(DataCollectionService dataCollectionService) {
+        this.dataCollectionService = dataCollectionService;
+    }
 
     @GetMapping
     @Operation(summary = "Get all collections with pagination")

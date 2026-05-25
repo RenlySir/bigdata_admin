@@ -6,7 +6,6 @@ import com.bigdata.admin.entity.ImportTask;
 import com.bigdata.admin.service.DataImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,11 +16,14 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/collections/{collectionId}/import")
-@RequiredArgsConstructor
 @Tag(name = "Data Import", description = "Data import operations")
 public class DataImportController {
 
     private final DataImportService dataImportService;
+
+    public DataImportController(DataImportService dataImportService) {
+        this.dataImportService = dataImportService;
+    }
 
     @PostMapping
     @Operation(summary = "Create and start import task")

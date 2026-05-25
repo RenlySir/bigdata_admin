@@ -3,7 +3,8 @@ package com.bigdata.admin.config;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -14,11 +15,12 @@ import java.io.IOException;
  * Security Headers Filter
  * Adds security headers to all HTTP responses for defense-in-depth
  */
-@Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @WebFilter(urlPatterns = "/*")
 public class SecurityHeadersFilter implements Filter {
+
+    private static final Logger log = LoggerFactory.getLogger(SecurityHeadersFilter.class);
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)

@@ -2,11 +2,11 @@ package com.bigdata.admin.config;
 
 import com.bigdata.admin.common.Result;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -19,13 +19,17 @@ import java.lang.annotation.Target;
 /**
  * Rate Limiting Aspect
  */
-@Slf4j
 @Aspect
 @Component
-@RequiredArgsConstructor
 public class RateLimitAspect {
 
+    private static final Logger log = LoggerFactory.getLogger(RateLimitAspect.class);
+
     private final RateLimiter rateLimiter;
+
+    public RateLimitAspect(RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
+    }
 
     /**
      * Rate limit annotation for controller methods

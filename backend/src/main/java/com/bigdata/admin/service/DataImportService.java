@@ -6,10 +6,10 @@ import com.bigdata.admin.entity.ImportTask;
 import com.bigdata.admin.mapper.DataRecordMapper;
 import com.bigdata.admin.mapper.ImportTaskMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,14 +25,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Data Import Service
  * Handles CSV, Excel, and JSON imports
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class DataImportService {
+
+    private static final Logger log = LoggerFactory.getLogger(DataImportService.class);
 
     private final ImportTaskMapper importTaskMapper;
     private final DataRecordMapper dataRecordMapper;
     private final ObjectMapper objectMapper;
+
+    public DataImportService(ImportTaskMapper importTaskMapper, DataRecordMapper dataRecordMapper, ObjectMapper objectMapper) {
+        this.importTaskMapper = importTaskMapper;
+        this.dataRecordMapper = dataRecordMapper;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * Create a new import task

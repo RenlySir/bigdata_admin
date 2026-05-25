@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.RequiredArgsConstructor;
+import jakarta.validation.constraints.Size;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,11 +18,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/collections/{collectionId}/records")
-@RequiredArgsConstructor
 @Tag(name = "Data Record Management", description = "Data record CRUD operations")
 public class DataRecordController {
 
     private final DataRecordService dataRecordService;
+
+    public DataRecordController(DataRecordService dataRecordService) {
+        this.dataRecordService = dataRecordService;
+    }
 
     @GetMapping
     @Operation(summary = "Get records by collection with pagination")
