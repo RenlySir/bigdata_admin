@@ -26,6 +26,16 @@ const routes = [
     component: () => import('@/views/Records.vue')
   },
   {
+    path: '/etl',
+    name: 'EtlTransformations',
+    component: () => import('@/views/EtlTransformations.vue')
+  },
+  {
+    path: '/alerts',
+    name: 'Alerts',
+    component: () => import('@/views/Alerts.vue')
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/Settings.vue')

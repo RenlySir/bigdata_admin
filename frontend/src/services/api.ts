@@ -73,4 +73,90 @@ export const collectionApi = {
   }
 }
 
+/**
+ * ETL API
+ */
+export const etlApi = {
+  getTransformations: (params): Promise<ApiResponse> => {
+    return apiClient.get('/etl/transformations', { params })
+  },
+
+  getTransformationById: (id): Promise<ApiResponse> => {
+    return apiClient.get(`/etl/transformations/${id}`)
+  },
+
+  createTransformation: (data): Promise<ApiResponse> => {
+    return apiClient.post('/etl/transformations', data)
+  },
+
+  updateTransformation: (id, data): Promise<ApiResponse> => {
+    return apiClient.put(`/etl/transformations/${id}`, data)
+  },
+
+  deleteTransformation: (id): Promise<ApiResponse> => {
+    return apiClient.delete(`/etl/transformations/${id}`)
+  },
+
+  executeTransformation: (id, triggeredBy = 'manual'): Promise<ApiResponse> => {
+    return apiClient.post(`/etl/transformations/${id}/execute`, null, {
+      params: { triggeredBy }
+    })
+  },
+
+  getExecutions: (params): Promise<ApiResponse> => {
+    return apiClient.get('/etl/executions', { params })
+  }
+}
+
+/**
+ * Monitoring API
+ */
+export const monitoringApi = {
+  getCurrentMetrics: (): Promise<ApiResponse> => {
+    return apiClient.get('/monitoring/metrics/current')
+  },
+
+  getMetricsHistory: (params): Promise<ApiResponse> => {
+    return apiClient.get('/monitoring/metrics/history', { params })
+  },
+
+  getAlertRules: (params): Promise<ApiResponse> => {
+    return apiClient.get('/monitoring/alerts/rules', { params })
+  },
+
+  getActiveAlertRules: (): Promise<ApiResponse> => {
+    return apiClient.get('/monitoring/alerts/rules/active')
+  },
+
+  createAlertRule: (data): Promise<ApiResponse> => {
+    return apiClient.post('/monitoring/alerts/rules', data)
+  },
+
+  updateAlertRule: (id, data): Promise<ApiResponse> => {
+    return apiClient.put(`/monitoring/alerts/rules/${id}`, data)
+  },
+
+  deleteAlertRule: (id): Promise<ApiResponse> => {
+    return apiClient.delete(`/monitoring/alerts/rules/${id}`)
+  },
+
+  getAlertHistory: (params): Promise<ApiResponse> => {
+    return apiClient.get('/monitoring/alerts/history', { params })
+  },
+
+  getActiveAlerts: (): Promise<ApiResponse> => {
+    return apiClient.get('/monitoring/alerts/active')
+  },
+
+  acknowledgeAlert: (id, userId): Promise<ApiResponse> => {
+    return apiClient.post(`/monitoring/alerts/${id}/acknowledge`, null, {
+      params: { userId }
+    })
+  },
+
+  resolveAlert: (id): Promise<ApiResponse> => {
+    return apiClient.post(`/monitoring/alerts/${id}/resolve`)
+  }
+}
+
 export default apiClient

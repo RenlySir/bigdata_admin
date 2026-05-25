@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -48,10 +47,8 @@ class EtlServiceTest {
     @Mock
     private DataRecordMapper recordMapper;
 
-    @Mock
     private ObjectMapper objectMapper;
 
-    @InjectMocks
     private EtlService etlService;
 
     private EtlTransformation testTransformation;
@@ -59,6 +56,9 @@ class EtlServiceTest {
 
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
+        etlService = new EtlService(transformationMapper, executionMapper, collectionMapper, recordMapper, objectMapper);
+
         testCollection = new DataCollection();
         testCollection.setId(1L);
         testCollection.setName("测试集合");

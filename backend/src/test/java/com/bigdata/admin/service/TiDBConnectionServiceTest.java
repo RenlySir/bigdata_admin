@@ -4,44 +4,29 @@ import com.bigdata.admin.config.TiDBConfig;
 import com.bigdata.admin.dto.TiDBConnectionInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for TiDBConnectionService
  */
-@ExtendWith(MockitoExtension.class)
 class TiDBConnectionServiceTest {
 
-    @Mock
     private TiDBConfig defaultConfig;
-
-    @InjectMocks
     private TiDBConnectionService tiDBConnectionService;
 
     @BeforeEach
     void setUp() {
-        // Configure default TiDB config
-        ReflectionTestUtils.setField(defaultConfig, "host", "localhost");
-        ReflectionTestUtils.setField(defaultConfig, "port", 4000);
-        ReflectionTestUtils.setField(defaultConfig, "database", "test_db");
-        ReflectionTestUtils.setField(defaultConfig, "username", "root");
-        ReflectionTestUtils.setField(defaultConfig, "password", "");
-        ReflectionTestUtils.setField(defaultConfig, "ssl", false);
-        ReflectionTestUtils.setField(defaultConfig, "timezone", "Asia/Shanghai");
+        defaultConfig = new TiDBConfig();
+        defaultConfig.setHost("localhost");
+        defaultConfig.setPort(4000);
+        defaultConfig.setDatabase("test_db");
+        defaultConfig.setUsername("root");
+        defaultConfig.setPassword("");
+        defaultConfig.setSsl(false);
+        defaultConfig.setTimezone("Asia/Shanghai");
+        tiDBConnectionService = new TiDBConnectionService(defaultConfig);
     }
 
     @Test

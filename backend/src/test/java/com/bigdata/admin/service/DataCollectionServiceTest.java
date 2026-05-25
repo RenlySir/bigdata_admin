@@ -165,7 +165,6 @@ class DataCollectionServiceTest {
     @Test
     void deleteCollection_WhenValidId_ShouldSucceed() {
         when(dataCollectionMapper.deleteById(1L)).thenReturn(1);
-        when(dataRecordMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
         when(dataRecordMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(0);
 
         dataCollectionService.deleteCollection(1L);
