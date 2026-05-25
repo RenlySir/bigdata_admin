@@ -70,7 +70,8 @@ Vue 3 + Vite 5
 cd backend
 
 # 配置数据库连接
-# 编辑 src/main/resources/application.yml
+# 编辑 src/main/resources/application.yml 或通过环境变量覆盖
+export JWT_SECRET="dev-secret-key-for-testing-only-min-32-chars"
 
 # 启动应用
 mvn clean install
@@ -198,9 +199,9 @@ AlertHistory (告警历史)
 
 ## 🔐 安全特性
 
-- JWT Token 认证
+- JWT Token 认证（支持黑名单注销与绝对刷新期限）
 - 基于 RBAC 的权限控制
-- API 请求限流
+- API 请求限流（Redis 不可用时启用本地后备限流）
 - CORS 跨域配置
 - SQL 注入防护
 
