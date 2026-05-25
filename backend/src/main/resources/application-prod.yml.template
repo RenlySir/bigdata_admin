@@ -1,0 +1,102 @@
+# Production Configuration Template
+# Copy this file to application-prod.yml and configure your environment variables
+
+spring:
+  application:
+    name: bigdata-admin
+
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${TIDB_HOST:localhost}:${TIDB_PORT:4000}/bigdata_admin?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${TIDB_USERNAME}
+    password: ${TIDB_PASSWORD}
+
+    druid:
+      initial-size: 10
+      min-idle: 10
+      max-active: 50
+      max-wait: 10000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      # Remove the connection after 30 minutes of inactivity
+      remove-abandoned: true
+      remove-abandoned-timeout: 1800
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  # Enable response compression
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.bigdata.admin.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    # Disable SQL logging in production
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+
+logging:
+  level:
+    com.bigdata.admin: ${LOG_LEVEL:INFO}
+    org.springframework.web: WARN
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+  file:
+    name: ${LOG_PATH:/var/log/bigdata-admin}/application.log
+    max-size: 100MB
+    max-history: 30
+
+app:
+  jwt:
+    # REQUIRED: Generate secure key with: openssl rand -base64 32
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}
+    issuer: bigdata-admin
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+
+---
+# Environment Variables Required for Production:
+# JWT_SECRET - JWT signing key (generate with: openssl rand -base64 32)
+# TIDB_HOST - TiDB host address
+# TIDB_PORT - TiDB port (default: 4000)
+# TIDB_USERNAME - Database username
+# TIDB_PASSWORD - Database password
+# CORS_ORIGINS - Comma-separated list of allowed origins

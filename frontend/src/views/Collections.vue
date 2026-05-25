@@ -9,7 +9,8 @@
               v-model="searchKeyword"
               placeholder="搜索数据集合"
               style="width: 200px; margin-right: 10px"
-              @keyup.enter="loadCollections"
+              clearable
+              @clear="loadCollections"
             />
             <el-button type="primary" @click="showCreateDialog">
               <el-icon><Plus /></el-icon>
@@ -97,10 +98,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiCollection } from '@/api'
+import { debounce } from '@/utils/debounce'
 
 const router = useRouter()
 const loading = ref(false)
@@ -204,6 +206,17 @@ const handleDelete = async (row) => {
     ElMessage.error('删除失败')
   }
 }
+
+// Debounced search function
+const debouncedSearch = debounce(() => {
+  pagination.page = 1
+  loadCollections()
+}, 500)
+
+// Watch for search keyword changes
+watch(searchKeyword, () => {
+  debouncedSearch()
+})
 
 onMounted(() => {
   loadCollections()

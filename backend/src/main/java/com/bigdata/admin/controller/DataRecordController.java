@@ -2,10 +2,14 @@ package com.bigdata.admin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bigdata.admin.common.Result;
+import com.bigdata.admin.config.RateLimitAspect;
 import com.bigdata.admin.entity.DataRecord;
 import com.bigdata.admin.service.DataRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +26,11 @@ public class DataRecordController {
 
     @GetMapping
     @Operation(summary = "Get records by collection with pagination")
+    @RateLimitAspect.RateLimit(capacity = 100)
     public Result<Page<DataRecord>> getRecords(
             @PathVariable Long collectionId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(required = false) String keyword) {
         Page<DataRecord> result = dataRecordService.getRecords(collectionId, page, size, keyword);
         return Result.success(result);
@@ -53,9 +58,10 @@ public class DataRecordController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch insert records")
+    @RateLimitAspect.BatchRateLimit(capacity = 10)
     public Result<Void> batchInsertRecords(
             @PathVariable Long collectionId,
-            @RequestBody List<DataRecord> records) {
+            @RequestBody @Size(min = 1, max = 1000, message = "批量操作记录数必须在1-1000之间") List<DataRecord> records) {
         records.forEach(r -> r.setCollectionId(collectionId));
         dataRecordService.batchInsertRecords(records);
         return Result.success("Records inserted successfully", null);
@@ -77,6 +83,7 @@ public class DataRecordController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete record")
+    @RateLimitAspect.SensitiveRateLimit(capacity = 5)
     public Result<Void> deleteRecord(@PathVariable Long collectionId, @PathVariable Long id) {
         DataRecord existing = dataRecordService.getRecordById(id);
         if (existing == null || !existing.getCollectionId().equals(collectionId)) {
