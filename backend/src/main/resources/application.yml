@@ -72,7 +72,18 @@ logging:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:bigdata-admin-secret-key-change-in-production-2024}
-    expiration: 86400000
+    # IMPORTANT: Set JWT_SECRET environment variable in production!
+    # Generate a secure key: openssl rand -base64 32
+    # Default is for development only - will fail validation in production
+    secret: ${JWT_SECRET:}
+    expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+    issuer: bigdata-admin
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:8080}
+  ratelimit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    capacity: ${RATE_LIMIT_CAPACITY:100}
+    time-window-seconds: ${RATE_LIMIT_WINDOW:60}
+    batch-capacity: ${RATE_LIMIT_BATCH_CAPACITY:10}
+    sensitive-capacity: ${RATE_LIMIT_SENSITIVE_CAPACITY:5}
+    use-redis: ${RATE_LIMIT_USE_REDIS:true}

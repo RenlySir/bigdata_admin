@@ -66,28 +66,39 @@ public class DataRecordService extends ServiceImpl<DataRecordMapper, DataRecord>
         dataRecordMapper.deleteById(id);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void batchInsertRecords(List<DataRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        // Pre-process checksums
         records.forEach(record -> {
             record.setVersion(1L);
             record.setChecksum(calculateChecksum(record.getJsonData()));
         });
-        records.forEach(dataRecordMapper::insert);
+        // Use MyBatis Plus batch insert for better performance
+        this.saveBatch(records, 1000);
     }
 
     private String calculateChecksum(String data) {
+        if (data == null || data.isEmpty()) {
+            return "";
+        }
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
+            // Use Hex format for better performance
+            StringBuilder hexString = new StringBuilder(hash.length * 2);
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
                 hexString.append(hex);
             }
             return hexString.toString();
         } catch (Exception e) {
-            log.error("Error calculating checksum", e);
+            log.error("Error calculating checksum for data", e);
             return "";
         }
     }

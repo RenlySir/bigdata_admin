@@ -21,7 +21,8 @@
         v-model="searchKeyword"
         placeholder="搜索记录内容"
         style="width: 300px; margin-bottom: 15px"
-        @keyup.enter="loadRecords"
+        clearable
+        @clear="loadRecords"
       >
         <template #append>
           <el-button @click="loadRecords">
@@ -142,10 +143,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiRecord, apiCollection } from '@/api'
+import { debounce } from '@/utils/debounce'
 
 const route = useRoute()
 const collectionId = ref(route.params.id)
@@ -275,6 +277,17 @@ const handleDelete = async (row) => {
 const showImportDialog = () => {
   ElMessage.info('导入功能开发中...')
 }
+
+// Debounced search function
+const debouncedSearch = debounce(() => {
+  pagination.page = 1
+  loadRecords()
+}, 500)
+
+// Watch for search keyword changes
+watch(searchKeyword, () => {
+  debouncedSearch()
+})
 
 onMounted(() => {
   loadCollection()
