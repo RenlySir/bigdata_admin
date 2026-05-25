@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:4000/bigdata_admin?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: ""
+
+logging:
+  level:
+    com.bigdata.admin: DEBUG
+    org.springframework.web: INFO
+    com.baomidou.mybatisplus: DEBUG

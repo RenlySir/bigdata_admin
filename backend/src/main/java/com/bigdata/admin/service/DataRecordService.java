@@ -1,0 +1,94 @@
+package com.bigdata.admin.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.bigdata.admin.entity.DataRecord;
+import com.bigdata.admin.mapper.DataRecordMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class DataRecordService extends ServiceImpl<DataRecordMapper, DataRecord> {
+
+    private final DataRecordMapper dataRecordMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public Page<DataRecord> getRecords(Long collectionId, int page, int size, String keyword) {
+        Page<DataRecord> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<DataRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DataRecord::getCollectionId, collectionId);
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.like(DataRecord::getJsonData, keyword)
+                   .or()
+                   .like(DataRecord::getTextContent, keyword);
+        }
+        wrapper.orderByDesc(DataRecord::getCreatedAt);
+        return dataRecordMapper.selectPage(pageParam, wrapper);
+    }
+
+    public DataRecord getRecordById(Long id) {
+        return dataRecordMapper.selectById(id);
+    }
+
+    @Transactional
+    public DataRecord createRecord(DataRecord record) {
+        record.setVersion(1L);
+        record.setChecksum(calculateChecksum(record.getJsonData()));
+        dataRecordMapper.insert(record);
+        return record;
+    }
+
+    @Transactional
+    public DataRecord updateRecord(Long id, DataRecord record) {
+        DataRecord existing = getRecordById(id);
+        if (existing != null) {
+            record.setId(id);
+            record.setVersion(existing.getVersion() + 1);
+            record.setChecksum(calculateChecksum(record.getJsonData()));
+            dataRecordMapper.updateById(record);
+            return getRecordById(id);
+        }
+        return null;
+    }
+
+    @Transactional
+    public void deleteRecord(Long id) {
+        dataRecordMapper.deleteById(id);
+    }
+
+    @Transactional
+    public void batchInsertRecords(List<DataRecord> records) {
+        records.forEach(record -> {
+            record.setVersion(1L);
+            record.setChecksum(calculateChecksum(record.getJsonData()));
+        });
+        records.forEach(dataRecordMapper::insert);
+    }
+
+    private String calculateChecksum(String data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            log.error("Error calculating checksum", e);
+            return "";
+        }
+    }
+}
