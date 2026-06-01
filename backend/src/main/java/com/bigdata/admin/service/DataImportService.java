@@ -33,11 +33,13 @@ public class DataImportService {
     private final ImportTaskMapper importTaskMapper;
     private final DataRecordMapper dataRecordMapper;
     private final ObjectMapper objectMapper;
+    private final DataRecordService dataRecordService;
 
-    public DataImportService(ImportTaskMapper importTaskMapper, DataRecordMapper dataRecordMapper, ObjectMapper objectMapper) {
+    public DataImportService(ImportTaskMapper importTaskMapper, DataRecordMapper dataRecordMapper, ObjectMapper objectMapper, DataRecordService dataRecordService) {
         this.importTaskMapper = importTaskMapper;
         this.dataRecordMapper = dataRecordMapper;
         this.objectMapper = objectMapper;
+        this.dataRecordService = dataRecordService;
     }
 
     /**
@@ -285,8 +287,9 @@ public class DataImportService {
             r.setChecksum(calculateChecksum(r.getJsonData()));
         });
 
-        // Batch insert
-        records.forEach(dataRecordMapper::insert);
+        // Use MyBatis-Plus saveBatch for true batch insert instead of forEach
+        // This sends multiple records in a single batch operation
+        dataRecordService.batchInsertRecords(records);
 
         // Update task progress
         int current = recordCount.addAndGet(records.size());

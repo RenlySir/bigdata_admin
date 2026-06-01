@@ -241,9 +241,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiEtl, apiCollection } from '@/api'
+import { useWatchDebounce } from '@/composables/useDebounce'
 
 // 数据
 const loading = ref(false)
@@ -360,6 +361,25 @@ const handleReset = () => {
   }
   handleSearch()
 }
+
+// Debounced search for keyword input
+useWatchDebounce(
+  () => searchForm.value.keyword,
+  (newValue) => {
+    if (newValue !== undefined && newValue !== searchForm.value.keyword) {
+      handleSearch()
+    }
+  },
+  500
+)
+
+// Watch status changes with debounce
+watch(
+  () => searchForm.value.status,
+  (newValue) => {
+    handleSearch()
+  }
+)
 
 const handlePageChange = (page) => {
   pagination.value.page = page

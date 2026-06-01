@@ -66,15 +66,20 @@
       </el-header>
 
       <el-main class="main-content">
-        <router-view />
+        <ErrorBoundary @error="handleGlobalError" @reset="handleErrorReset">
+          <router-view />
+        </ErrorBoundary>
       </el-main>
     </el-container>
   </el-container>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import { setupGlobalErrorHandler } from '@/composables/useErrorHandler'
 
 const route = useRoute()
 const currentPageName = computed(() => {
@@ -88,6 +93,25 @@ const currentPageName = computed(() => {
     '/settings': '系统设置'
   }
   return names[route.path] || '首页'
+})
+
+// Error state
+const globalError = ref(null)
+
+// Handle global errors
+const handleGlobalError = ({ error }) => {
+  console.error('Global application error:', error)
+  ElMessage.error(`应用错误: ${error.message || '未知错误'}`)
+}
+
+// Handle error reset
+const handleErrorReset = () => {
+  console.log('Error boundary reset')
+}
+
+// Setup global error handling on mount
+onMounted(() => {
+  setupGlobalErrorHandler()
 })
 </script>
 
